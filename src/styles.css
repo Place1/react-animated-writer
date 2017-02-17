@@ -1,0 +1,35 @@
+body {
+	margin: 0px;
+	font-family: 'Roboto', sans-serif;
+}
+
+.page {
+	width: 100vw;
+	height: 100vh;
+	background-color: rgb(105, 0, 136);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.page__controls {
+	position: absolute;
+	top: 20px;
+	right: 20px;
+}
+
+.page__controls label {
+	display: flex;
+	justify-content: space-between;
+	color: white;
+}
+
+.page__controls input {
+	margin-left: 10px;
+}
+
+.writer {
+	font-size: 90px;
+	font-weight: 300;
+	color: white;
+}
