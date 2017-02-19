@@ -1,4 +1,5 @@
 # demo
+*run with `npm start`*
 
 ```
 class Writer extends React.Component {
