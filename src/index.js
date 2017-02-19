@@ -11,18 +11,52 @@ function sleep(ms) {
 class Writer extends React.Component {
 
   static propTypes = {
-    words: PropTypes.arrayOf(PropTypes.string).isRequired,
-    growTime: PropTypes.number.isRequired,
-    shrinkTime: PropTypes.number.isRequired,
-    pauseTime: PropTypes.number.isRequired,
-    prefix: PropTypes.string,
+    script: PropTypes.arrayOf(PropTypes.func).isRequired,
+    loop: PropTypes.bool,
+  }
+
+  static write(stringToWrite, duration) {
+    return async (instance) => {
+      const characters = stringToWrite.split('');
+      const delayPerChar = duration / characters.length;
+      for (let i in characters) {
+        instance.setState({
+          word: instance.state.word + characters[i],
+        }),
+        await sleep(delayPerChar);
+      }
+    };
+  }
+
+  static deleteChars(numberOfChars, duration) {
+    return async (instance) => {
+      const delayPerChar = duration / numberOfChars;
+      for (let i = 0; i < numberOfChars; i++) {
+        instance.setState({
+          word: instance.state.word.slice(0, instance.state.word.length - 1),
+        });
+        await sleep(delayPerChar);
+      }
+    };
+  }
+
+  static deleteAll(duration) {
+    return async (instance) => {
+      const totalChars = instance.state.word.length;
+      await Writer.deleteChars(totalChars, duration)(instance);
+    };
+  }
+
+  static delay(duration) {
+    return async () => {
+      await sleep(duration);
+    };
   }
 
   constructor(props) {
     super(props)
     this.state = {
-      wordIndex: 0,
-      charIndex: 0,
+      word: '',
     }
   }
 
@@ -31,63 +65,20 @@ class Writer extends React.Component {
   }
 
   async animate() {
-    while(true) {
-      await this.animateUp();
-      await sleep(this.props.pauseTime);
-      await this.animateDown();
-      await this.setStateAsync({
-        wordIndex: (this.state.wordIndex + 1) % this.props.words.length,
-      });
+    while(this.props.loop) {
+      for (let i in this.props.script) {
+        await this.props.script[i](this);
+      }
     }
-  }
-
-  async animateUp() {
-    const currentWord = this.curWord();
-    for (let i = 0; i <= currentWord.length; i++) {
-      await this.setStateAsync({
-        charIndex: i,
-      });
-      await sleep(this.growDelay());
-    }
-  }
-
-  async animateDown() {
-    const currentWord = this.curWord();
-    for (let i = currentWord.length; i >= 0; i--) {
-      await this.setStateAsync({
-        charIndex: i,
-      });
-      await sleep(this.shrinkDelay());
-    }
-  }
-
-  curWord() {
-    return this.props.words[this.state.wordIndex];
-  }
-
-  setStateAsync(newState) {
-    return new Promise(resolve => {
-      this.setState(newState, resolve)
-    });
-  }
-
-  growDelay() {
-    return this.props.growTime / this.curWord().length;
-  }
-
-  shrinkDelay() {
-    return this.props.shrinkTime / this.curWord().length;
   }
 
   render() {
-    const word = this.props.words[this.state.wordIndex].slice(0, this.state.charIndex)
-    const prefix = this.props.prefix
-    const delimiter = prefix ? '-' : '';
+    const word = this.state.word;
 
     return (
       <div className="writer">
         <span>&lt;</span>
-        <span>{prefix}{delimiter}{word}</span>
+        <span>{word}</span>
         <span> /&gt;</span>
       </div>
     );
@@ -105,48 +96,28 @@ function bindInputToState(component, stateKey) {
   };
 }
 
-class App extends React.Component {
+function App() {
+  const delayTime = 2000;
+  const writeTime = 250;
+  const deleteTime = 180;
+  const script = [
+    Writer.write('welcome-', writeTime),
+    Writer.write('eat', writeTime),
+    Writer.delay(delayTime),
+    Writer.deleteChars(3, deleteTime),
+    Writer.write('sleep', writeTime),
+    Writer.delay(delayTime),
+    Writer.deleteChars(5, deleteTime),
+    Writer.write('code', writeTime),
+    Writer.delay(delayTime),
+    Writer.deleteAll(300),
+  ];
 
-  constructor() {
-    super();
-    this.state = {
-      pauseTime: 2000,
-      growTime: 250,
-      shrinkTime: 120,
-      prefix: '',
-      words: 'eat,sleep,code',
-    };
-  }
-
-  render() {
-    return (
-      <div className="page">
-        <div className="page__controls">
-          <label>
-            prefix
-            <input type="string" {...bindInputToState(this, 'prefix')} />
-          </label>
-          <label>
-            words (seperate with a commer)
-            <input type="string" {...bindInputToState(this, 'words')} />
-          </label>
-          <label>
-            pause time (ms)
-            <input type="number" min="0" {...bindInputToState(this, 'pauseTime')} />
-          </label>
-          <label>
-            grow time (ms)
-            <input type="number" min="0" {...bindInputToState(this, 'growTime')} />
-          </label>
-          <label>
-            shrink time (ms)
-            <input type="number" min="0" {...bindInputToState(this, 'shrinkTime')} />
-          </label>
-        </div>
-        <Writer {...this.state} words={this.state.words.split(',')} />
-      </div>
-    );
-  }
+  return (
+    <div className="page">
+      <Writer script={script} loop={true} />
+    </div>
+  );
 }
 
 ReactDOM.render(
