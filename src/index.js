@@ -20,7 +20,7 @@ class Writer extends React.Component {
       const characters = stringToWrite.split('');
       const delayPerChar = duration / characters.length;
       for (let i in characters) {
-        instance.setState({
+        await instance.setStateAsync({
           word: instance.state.word + characters[i],
         }),
         await sleep(delayPerChar);
@@ -32,7 +32,7 @@ class Writer extends React.Component {
     return async (instance) => {
       const delayPerChar = duration / numberOfChars;
       for (let i = 0; i < numberOfChars; i++) {
-        instance.setState({
+        await instance.setStateAsync({
           word: instance.state.word.slice(0, instance.state.word.length - 1),
         });
         await sleep(delayPerChar);
@@ -70,6 +70,10 @@ class Writer extends React.Component {
         await this.props.script[i](this);
       }
     }
+  }
+
+  setStateAsync(newState) {
+    return new Promise(resolve => this.setState(newState, resolve));
   }
 
   render() {
